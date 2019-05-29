@@ -6,12 +6,14 @@ services:
     lemp-nginx:
         # Use the official NginX Alpine image
         # the Alpine image is much smaller than the default but is fine for most setups
-        image: nginx:stable-alpine
+        image: nginx:alpine
         # We can give the container an easilt identifiable name
         container_name: lemp-nginx
         # Expose ports to the host system
         ports:
             - "80:80"
+        networks: 
+            - lemp-network
         # Mount host directories or files in the container
         volumes:
             - ./helloworld:/helloworld # With read / write access
@@ -31,7 +33,7 @@ services:
         container_name: lemp-mariadb
         volumes:
             # We can also use data volumes so the data persists after the container is shut down, or even deleted
-            - lemp-volume-mariadb:/var/lib/mysql
+            - ./bd:/var/lib/mysql
         networks:
             - lemp-network
         # Expose the ports to the host system
@@ -40,10 +42,26 @@ services:
         # We can specify environment variables
         # (eg. here this will create a database `exampledatabase`, a non-root user `exampleuser`, etc)
         environment:
-            MYSQL_DATABASE: exampledatabase
-            MYSQL_USER: exampleuser
-            MYSQL_PASSWORD: exampleuserpassword
-            MYSQL_ROOT_PASSWORD: examplerootpassword
+            MYSQL_ROOT_PASSWORD: root
+            MYSQL_DATABASE: hw
+
+    phpmyadmin:
+
+        image: phpmyadmin/phpmyadmin
+        container_name: phpmyadmin
+        networks:
+           - lemp-network
+        restart: always
+        links:
+          - lemp-mariadb
+        ports:
+          - "8181:80"
+        environment:
+          MYSQL_USERNAME: root
+          MYSQL_ROOT_PASSWORD: root
+          PMA_HOST: lemp-mariadb
+        
+          
 
     phpfpm:
         # To build a Docker image, specify the directory containing the Dockerfile
@@ -66,6 +84,3 @@ networks:
     lemp-network:
         driver: bridge
 
-# Here we specify our data volume(s)
-volumes:
-    lemp-volume-mariadb:
